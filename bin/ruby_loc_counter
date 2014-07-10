@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+RUBY_FILENAME_REGEXP   = /^(.*\.rb|.*\.rake|config\.ru|Rakefile|)$/
+WHITESPACE_LINE_REGEXP = /^\s*$/
+COMMENT_LINE_REGEXP    = /^\s*\#/
+
+FILENAME_HEADER        = 'Filename'
+LINES_HEADER           = 'Lines'
+LOC_HEADER             = 'LOC'
+NUMBER_COLUMN_WIDTH    = 6
+
+
+path = ARGV.shift
+ruby_files = []
+
+
+# If the parameter refers to a single file, add that to the list of files.
+if File.exists?(path) && !File.directory?(path)
+  ruby_files << File.expand_path(path)
+
+else
+  pattern = File.expand_path(path)
+
+  # If the parameter is a directory, add all Ruby files below it (recursive).
+  if Dir.exists?(pattern)
+    pattern += '/**/*.rb'
+    ruby_files += Dir.glob(pattern).sort
+
+  # Otherwise, attempt to interpret as a ready-made Glob.
+  else
+    ruby_files += Dir.glob(pattern).sort
+  end
+end
+
+
+# Filter filenames - only recognized Ruby files allowed
+ruby_files.select! { |f| f =~ RUBY_FILENAME_REGEXP }
+ruby_files.sort!
+
+
+# If there are no matching files, display an error and exit.
+if ruby_files.empty?
+  puts 'No recognized Ruby files found'
+  exit 0
+end
+
+
+# Otherwise, count lines and LOC for each file.
+results = { } 
+ruby_files.each do |file|
+  line_count, loc_count = 0, 0
+  File.foreach(file) do |line|
+    line_count += 1
+    loc_count += 1 unless line =~ WHITESPACE_LINE_REGEXP ||
+      line =~ COMMENT_LINE_REGEXP
+  end
+
+  results[file] = { lines: line_count, locs: loc_count }
+end
+
+
+# Format the results into a nice looking table.
+filename_width = ruby_files.inject('') do |longest, filename|
+  longest.length > filename.length ? longest : filename
+end.length
+filename_width = [ filename_width, FILENAME_HEADER.length ].max
+total_table_width = filename_width + (2 * NUMBER_COLUMN_WIDTH) + 10
+
+puts '-' * total_table_width
+puts "| #{ FILENAME_HEADER.ljust(filename_width) } | #{ LINES_HEADER.ljust(NUMBER_COLUMN_WIDTH) } | #{ LOC_HEADER.ljust(NUMBER_COLUMN_WIDTH) } |"
+puts '-' * total_table_width
+results.each do |filename, result|
+  puts "| #{ filename.ljust(filename_width) } | #{ result[:lines].to_s.rjust(NUMBER_COLUMN_WIDTH) } | #{ result[:locs].to_s.rjust(NUMBER_COLUMN_WIDTH) } |"
+end
+puts '-' * total_table_width
