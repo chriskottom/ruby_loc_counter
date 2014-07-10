@@ -67,9 +67,17 @@ filename_width = [ filename_width, FILENAME_HEADER.length ].max
 total_table_width = filename_width + (2 * NUMBER_COLUMN_WIDTH) + 10
 
 puts '-' * total_table_width
-puts "| #{ FILENAME_HEADER.ljust(filename_width) } | #{ LINES_HEADER.ljust(NUMBER_COLUMN_WIDTH) } | #{ LOC_HEADER.ljust(NUMBER_COLUMN_WIDTH) } |"
+puts "| #{ FILENAME_HEADER.ljust(filename_width) } | " +
+  "#{ LINES_HEADER.ljust(NUMBER_COLUMN_WIDTH) } | " + 
+  "#{ LOC_HEADER.ljust(NUMBER_COLUMN_WIDTH) } |"
 puts '-' * total_table_width
 results.each do |filename, result|
-  puts "| #{ filename.ljust(filename_width) } | #{ result[:lines].to_s.rjust(NUMBER_COLUMN_WIDTH) } | #{ result[:locs].to_s.rjust(NUMBER_COLUMN_WIDTH) } |"
+  puts "| #{ filename.ljust(filename_width) } | " +
+    "#{ result[:lines].to_s.rjust(NUMBER_COLUMN_WIDTH) } | " +
+    "#{ result[:locs].to_s.rjust(NUMBER_COLUMN_WIDTH) } |"
 end
+puts '-' * total_table_width
+puts "| #{ ''.ljust(filename_width) } | " +
+  "#{ results.inject(0) { |sum, i| sum += i[1][:lines] }.to_s.rjust(NUMBER_COLUMN_WIDTH) } | " +
+  "#{ results.inject(0) { |sum, i| sum += i[1][:locs] }.to_s.rjust(NUMBER_COLUMN_WIDTH) } |"
 puts '-' * total_table_width
